@@ -1,30 +1,46 @@
+import xml.etree.ElementTree as ET
 import re
 import pandas as pd
 
 def parse_sms(file_path):
     transactions = []
     
-    # These rules teach Python how to find the specific words in the text
-    status_pattern = re.compile(r'(debited|credited)', re.IGNORECASE)
-    amount_pattern = re.compile(r'(?:INR|Rs\.?)\s*([\d,]+\.\d{2})', re.IGNORECASE)
-    date_pattern = re.compile(r'(\d{2}-[A-Za-z]{3}-\d{2})')
+    # 1. STATUS: Looks for the FIRST action word (Dr, Cr, Transferred, etc.)
+    status_pattern = re.compile(r'(debited|transferred|sent|credited|dr\.?|cr\.?)', re.IGNORECASE)
+    
+    # 2. AMOUNT: Now handles Rs.1 (no decimals) AND Rs.235.00 (decimals)
+    amount_pattern = re.compile(r'(?:INR|Rs\.?)\s*([\d,]+(?:\.\d{1,2})?)', re.IGNORECASE)
+    
+    # 3. DATE: Now handles DD-MM-YYYY, YYYY-MM-DD, and BOB's weird YYYY:MM:DD
+    date_pattern = re.compile(r'(\d{2}-\d{2}-\d{4}|\d{4}[:\-]\d{2}[:\-]\d{2})')
 
-    with open(file_path, 'r', encoding='utf-8') as file:
-        for line in file:
-            msg = line.strip()
-            if not msg:
-                continue
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        
+        for sms in root.findall('sms'):
+            msg = sms.get('body')
+            if not msg: continue
             
-            # Search the text using our rules
+            # Find our targets
             status_match = status_pattern.search(msg)
             amount_match = amount_pattern.search(msg)
             date_match = date_pattern.search(msg)
 
             if status_match and amount_match and date_match:
-                status = status_match.group(1).upper()
-                # Remove commas from thousands so Python can do math with it
+                raw_status = status_match.group(1).lower()
+                
+                # Categorize into DEBIT or CREDIT
+                if any(word in raw_status for word in ['debited', 'transferred', 'sent', 'dr']):
+                    status = "DEBIT"
+                else:
+                    status = "CREDIT"
+
+                # Clean the amount
                 amount = float(amount_match.group(1).replace(',', ''))
-                date = date_match.group(1)
+                
+                # Clean the date (Replace BOB's weird colons with standard hyphens)
+                date = date_match.group(1).replace(':', '-')
 
                 transactions.append({
                     "Date": date,
@@ -32,17 +48,8 @@ def parse_sms(file_path):
                     "Amount": amount
                 })
 
-    # Convert the list into a pandas DataFrame (a virtual spreadsheet)
-    return pd.DataFrame(transactions)
+    except Exception as e:
+        print(f"      -> ❌ Error parsing file: {e}")
+        return pd.DataFrame()
 
-# This block runs the test
-if __name__ == "__main__":
-    test_file = "data/raw/bank_messages.txt"
-    print("--- Reading Bank Messages ---\n")
-    
-    df = parse_sms(test_file)
-    
-    if not df.empty:
-        print(df.to_string(index=False))
-    else:
-        print("No transactions found. Check your text file!")
+    return pd.DataFrame(transactions)
