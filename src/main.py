@@ -1,6 +1,6 @@
 import os
 from src.drive_api import download_latest_backup
-from src.parser import parse_sms
+from src.parser import parse_sms, parse_pdf  # <--- IMPORT THE NEW FUNCTION
 from src.analyzer import analyze_monthly_spending
 from src.sheets_api import push_to_sheets
 
@@ -11,35 +11,48 @@ def main():
     
     sheet_name = "My Finance Tracker" 
     target_file = "data/raw/sms_backup.xml"
+    is_pdf = False
+    pdf_password = "" # Leave blank if no password, or put your bank password here
     
     # --- Interactive Menu ---
-    print("Where should we get the latest bank messages from?")
-    print("  [1] Google Drive (Download latest backup)")
-    print("  [2] Local Folder (Read existing file in data/raw/)")
+    print("Where should we get the latest data from?")
+    print("  [1] Google Drive (Download latest SMS backup)")
+    print("  [2] Local Folder (Read SMS XML in data/raw/)")
+    print("  [3] PDF Statement (Read statement.pdf in data/raw/)")
     
     choice = ""
-    while choice not in ['1', '2']:
-        choice = input("\nEnter 1 or 2: ").strip()
-        
-        if choice not in ['1', '2']:
-            print("Invalid choice. Please type 1 or 2.")
+    while choice not in ['1', '2', '3']:
+        choice = input("\nEnter 1, 2, or 3: ").strip()
 
     # --- Execute Based on Choice ---
     if choice == '1':
         success = download_latest_backup(target_file)
-        if not success:
-            print("      -> Exiting due to download failure.")
-            return
+        if not success: return
+        
     elif choice == '2':
-        print(f"\n[0/3] Bypassing Drive. Using local file: {target_file}")
+        print(f"\n[0/3] Using local SMS file: {target_file}")
         if not os.path.exists(target_file):
-            print(f"      -> ❌ Error: Could not find {target_file}.")
-            print("      -> Please place your XML backup in the data/raw/ folder and try again.")
+            print("      -> ❌ Error: File not found.")
+            return
+            
+    elif choice == '3':
+        target_file = "data/raw/statement.pdf"
+        is_pdf = True
+        print(f"\n[0/3] Using local PDF file: {target_file}")
+        if not os.path.exists(target_file):
+            print("      -> ❌ Error: Could not find statement.pdf.")
+            print("      -> Please place your PDF in the data/raw/ folder and rename it to statement.pdf.")
             return
 
-    # 1. Parse
-    print("\n[1/3] Reading SMS data...")
-    raw_data = parse_sms(target_file)
+    # 1. Parse Data
+    print("\n[1/3] Reading data...")
+    if is_pdf:
+        # Use the PDF engine
+        raw_data = parse_pdf(target_file, password=pdf_password if pdf_password else None)
+    else:
+        # Use the SMS engine
+        raw_data = parse_sms(target_file)
+
     if raw_data is None or raw_data.empty:
         print("      -> No data found. Exiting.")
         return
@@ -47,9 +60,6 @@ def main():
     # 2. Analyze
     print("[2/3] Crunching the numbers...")
     summary_data = analyze_monthly_spending(raw_data)
-    if summary_data is None or summary_data.empty:
-        print("      -> Math failed. Exiting.")
-        return
 
     # 3. Upload
     print("[3/3] Syncing with Google Sheets...")

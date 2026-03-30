@@ -50,7 +50,7 @@ def push_to_sheets(raw_df, summary_df, spreadsheet_name="My Finance Tracker"):
     
     format_worksheet(raw_ws, raw_df)
     
-    # Conditional Formatting (Corrected foregroundColor and bold syntax)
+    # Conditional Formatting for Red (Debit) and Green (Credit)
     rule_debit = ConditionalFormatRule(
         ranges=[GridRange.from_a1_range('B2:B1000', raw_ws)],
         booleanRule=BooleanRule(
@@ -65,6 +65,8 @@ def push_to_sheets(raw_df, summary_df, spreadsheet_name="My Finance Tracker"):
             format=cellFormat(textFormat=textFormat(foregroundColor=color(0, 0.5, 0), bold=True))
         )
     )
+    
+    # Safely apply the rules
     rules = get_conditional_format_rules(raw_ws)
     rules.clear() # Clear old rules so they don't stack up forever
     rules.append(rule_debit)

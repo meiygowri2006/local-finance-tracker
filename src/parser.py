@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import re
 import pandas as pd
+import pdfplumber
 
 def parse_sms(file_path):
     transactions = []
@@ -50,6 +51,58 @@ def parse_sms(file_path):
 
     except Exception as e:
         print(f"      -> ❌ Error parsing file: {e}")
+        return pd.DataFrame()
+
+    return pd.DataFrame(transactions)
+
+
+def parse_pdf(file_path, password=None):
+    """
+    Reads a bank statement PDF line by line.
+    Note: You may need to adjust the regex based on your specific bank's layout.
+    """
+    transactions = []
+    
+    # Looks for DD/MM/YYYY or DD-MM-YYYY
+    date_pattern = re.compile(r'(\d{2}[-/]\d{2}[-/]\d{2,4})')
+    # Looks for amounts (e.g., 1,500.00)
+    amount_pattern = re.compile(r'([\d,]+\.\d{2})')
+
+    try:
+        # Open the PDF (handles passwords if provided)
+        with pdfplumber.open(file_path, password=password) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text()
+                if not text: continue
+
+                for line in text.split('\n'):
+                    date_match = date_pattern.search(line)
+                    
+                    # If a line has a date, it is likely a transaction row
+                    if date_match:
+                        amounts = amount_pattern.findall(line)
+                        if amounts:
+                            raw_line = line.lower()
+                            
+                            # Determine Credit vs Debit
+                            # Bank statements usually have Cr for credit. If not, assume Debit.
+                            if any(word in raw_line for word in [' cr', 'credit', 'deposit']):
+                                status = "CREDIT"
+                            else:
+                                status = "DEBIT"
+
+                            # Grab the first amount found on the line
+                            amount = float(amounts[0].replace(',', ''))
+                            date = date_match.group(1).replace('/', '-')
+
+                            transactions.append({
+                                "Date": date,
+                                "Status": status,
+                                "Amount": amount
+                            })
+
+    except Exception as e:
+        print(f"      -> ❌ Error parsing PDF: {e}")
         return pd.DataFrame()
 
     return pd.DataFrame(transactions)
