@@ -1,11 +1,15 @@
-# Credentials and Private Data
-credentials/
+# Google API credentials
+credentials.json
+token.json
+service_account.json
+
+# Local financial data
 data/
+*.csv
+*.pdf
+*.xml
 
-# Python artifacts
-venv/
+# Python environments
 __pycache__/
-*.pyc
-
-# Local Environment
-.env
+.venv/
+venv/

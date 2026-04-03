@@ -1,38 +1,22 @@
-# 📊 Personal Finance Dashboard
+# 💸 Local Finance Tracker
 
-A comprehensive, interactive web dashboard built with Python and Streamlit that tracks, analyzes, and visualizes personal financial transactions extracted from SMS backups.
+A privacy-focused, offline-first personal finance dashboard built with Python and Streamlit. This tool automates the extraction of financial transactions from Android SMS XML backups and Bank Statement PDFs, categorizes them, and provides a beautiful interactive dashboard to visualize your spending habits.
 
-## ✨ Features & Data Processing
+## ✨ Features
+* **Dual Data Sources:** Parses both Android SMS Backup (`.xml`) and Bank Statements (`.pdf`).
+* **Privacy First:** All data is processed completely locally on your machine.
+* **Smart Extraction:** Uses PyMuPDF and Regex to accurately pull `Date`, `Description`, `Amount`, and `Status` (Debit/Credit).
+* **Interactive Dashboard:** Built with Streamlit, featuring yearly overviews, monthly trends, and raw transaction ledgers.
+* **Cloud Sync:** Pulls latest SMS backups from Google Drive and pushes processed financial summaries to Google Sheets.
 
-This project automates the workflow of tracking expenses by turning raw SMS data into a clean, readable financial dashboard.
+## 🛠️ Prerequisites
+Before running this project, ensure you have the following installed:
+1. Python 3.9 or higher.
+2. Google Cloud API Credentials (for Drive and Sheets sync). 
 
-* **Data Extraction:** Parses raw XML SMS backup files to identify and extract bank transaction messages.
-* **Intelligent Processing:** Uses `pandas` to clean data, parse dates, and categorize transactions as `DEBIT` or `CREDIT`.
-* **Dynamic Aggregations:** Automatically calculates and groups spending into **Daily, Weekly, Monthly, and Yearly** summaries.
-* **Interactive UI:** Built with Streamlit, featuring interactive toggles to switch between tabular data and visual charts (Bar charts and Scatter plots).
-* **Visual Enhancements:** * Custom pandas styling color-codes DEBITs (red) and CREDITs (green) for instant readability.
-  * User-friendly 1-based indexing on all data tables.
-* **Export Functionality:** Includes built-in buttons to download processed summaries and raw transaction data as clean `.csv` files.
+## 🚀 Installation & Setup
 
-## 🚀 Steps to Implement (Local Setup)
-
-Follow these steps to run the dashboard on your local machine.
-
-### 1. Prerequisites
-Ensure you have Python installed on your system. You will also need `pip` to install the required libraries.
-
-### 2. Clone the Repository
+**1. Clone the repository**
 ```bash
-git clone [https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git)
-cd YOUR_REPO_NAME
-
-
-# Local Finance Tracker
-A privacy-first Python application that parses local bank SMS exports, 
-analyzes spending habits, and synchronizes data with Google Sheets.
-
-## Setup
-1. Activate venv: `venv\Scripts\activate`
-2. Install deps: `pip install -r requirements.txt`
-3. Place SMS data in `data/raw/`
-4. Run: `python src/main.py`
+git clone [https://github.com/meiygowri2006/local-finance-tracker.git](https://github.com/meiygowri2006/local-finance-tracker.git)
+cd local-finance-tracker
